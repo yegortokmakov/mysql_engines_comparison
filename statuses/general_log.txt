@@ -1,0 +1,167 @@
+mysql innodb - 
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/innodb.sql 
+
+real    2m54.509s
+
+cold : 10 rows in set (46.20 sec)
+
+
+mysql> explain SELECT `keywords`.`word` AS keyword, count(*) AS clicks  FROM `adclicks`     INNER JOIN `keywords`         ON `adclicks`.`banner_id` = `keywords`.`banner_id`      LEFT JOIN `users`         ON `users`.`id` = `adclicks`.`user_id`      LEFT JOIN `pageviews`         ON `pageviews`.`id` = `adclicks`.`pageview_id`  WHERE     `users`.`gender` = 'F'      AND `users`.`age` BETWEEN 23 AND 28      AND `pageviews`.`platform` = 'android'     AND `adclicks`.`created_at` BETWEEN '2014-08-20 00:00:00' AND '2014-08-31 00:00:00' GROUP BY `keywords`.`word` ORDER BY `clicks` DESC LIMIT 10;
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+| id | select_type | table     | type   | possible_keys | key        | key_len | ref                                   | rows   | Extra                                                             |
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+|  1 | SIMPLE      | adclicks  | range  | timestamps    | timestamps | 6       | NULL                                  | 271180 | Using index condition; Using MRR; Using temporary; Using filesort |
+|  1 | SIMPLE      | keywords  | ref    | banner_id     | banner_id  | 8       | dbcompare_innodb.adclicks.banner_id   |      1 | NULL                                                              |
+|  1 | SIMPLE      | users     | eq_ref | PRIMARY       | PRIMARY    | 8       | dbcompare_innodb.adclicks.user_id     |      1 | Using where                                                       |
+|  1 | SIMPLE      | pageviews | eq_ref | PRIMARY       | PRIMARY    | 8       | dbcompare_innodb.adclicks.pageview_id |      1 | Using where                                                       |
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+4 rows in set (0.01 sec)
+
++---------+--------+
+| keyword | clicks |
++---------+--------+
+| o'clock |   1105 |
+| no      |   1052 |
+| lot     |    937 |
+| like    |    898 |
+| light   |    863 |
+| favor   |    806 |
+| back    |    738 |
+| inside  |    734 |
+| average |    709 |
+| in      |    698 |
++---------+--------+
+10 rows in set (47.28 sec)
+
+
+warm: 10 rows in set (45.55 sec)
+
+| innodb_buffer_pool_size                                | 134217728                                                                                                                                                                                                                                                                                                                                        |
+
+
+
+
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/myisam.sql 
+
+real    1m59.045s
+user    0m0.008s
+sys 0m0.000s
+
+
+cold :10 rows in set (21.71 sec)
+
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+| id | select_type | table     | type   | possible_keys | key        | key_len | ref                                   | rows   | Extra                                                             |
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+|  1 | SIMPLE      | adclicks  | range  | timestamps    | timestamps | 6       | NULL                                  | 160801 | Using index condition; Using MRR; Using temporary; Using filesort |
+|  1 | SIMPLE      | users     | eq_ref | PRIMARY       | PRIMARY    | 8       | dbcompare_myisam.adclicks.user_id     |      1 | Using where                                                       |
+|  1 | SIMPLE      | pageviews | eq_ref | PRIMARY       | PRIMARY    | 8       | dbcompare_myisam.adclicks.pageview_id |      1 | Using where                                                       |
+|  1 | SIMPLE      | keywords  | ref    | banner_id     | banner_id  | 8       | dbcompare_myisam.adclicks.banner_id   |     50 | NULL                                                              |
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+4 rows in set (0.01 sec)
+
+warm: 10 rows in set (21.86 sec)
+
+
+
+
+
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/innodb.sql 
+
+real    3m0.610s
+user 0m0.000s
+sys 0m0.008s
+
+cold cpu2: 10 rows in set (50.04 sec)
+cold: 10 rows in set (17.00 sec)
+warm: 10 rows in set (17.56 sec)
+
+mysql> show table status ;
++-----------+--------+---------+------------+---------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| Name      | Engine | Version | Row_format | Rows    | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment | Create_time         | Update_time | Check_time | Collation         | Checksum | Create_options | Comment |
++-----------+--------+---------+------------+---------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+| adclicks  | InnoDB |      10 | Compact    | 4587498 |             61 |   280838144 |               0 |    153894912 |   5242880 |        5000001 | 2014-11-02 15:05:11 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| banners   | InnoDB |      10 | Compact    |    1000 |            114 |      114688 |               0 |            0 |         0 |           1001 | 2014-11-02 15:05:11 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| keywords  | InnoDB |      10 | Compact    |   50248 |             52 |     2637824 |               0 |      2637824 |   4194304 |          50001 | 2014-11-02 15:05:11 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| pageviews | InnoDB |      10 | Compact    | 9821112 |             51 |   508559360 |               0 |            0 |   4194304 |       10327497 | 2014-11-02 15:06:42 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
+| users     | InnoDB |      10 | Compact    |  996786 |             67 |    67747840 |               0 |            0 |   4194304 |        1000001 | 2014-11-02 15:08:02 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
++-----------+--------+---------+------------+---------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
+5 rows in set (0.00 sec)
+
+
+
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/tokudb.sql 
+
+real    2m4.673s
+user    0m0.000s
+sys 0m0.004s
+
+cold: 10 rows in set (13.63 sec)
+warm: 10 rows in set (9.34 sec)
+
+mysql> show table status;
++-----------+--------+---------+-------------+----------+----------------+-------------+---------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
+| Name      | Engine | Version | Row_format  | Rows     | Avg_row_length | Data_length | Max_data_length     | Index_length | Data_free | Auto_increment | Create_time         | Update_time         | Check_time | Collation         | Checksum | Create_options | Comment |
++-----------+--------+---------+-------------+----------+----------------+-------------+---------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
+| adclicks  | TokuDB |      10 | tokudb_zlib |  5000000 |             38 |   190000000 | 9223372036854775807 |     75000000 |         0 |        5046196 | 2014-11-04 21:07:54 | 2014-11-04 21:07:54 | NULL       | latin1_swedish_ci |     NULL |                |         |
+| banners   | TokuDB |      10 | tokudb_zlib |     1000 |             51 |       51103 | 9223372036854775807 |            0 |         0 |           1024 | 2014-11-04 21:07:25 | 2014-11-04 21:07:25 | NULL       | latin1_swedish_ci |     NULL |                |         |
+| keywords  | TokuDB |      10 | tokudb_zlib |    50000 |             24 |     1223101 | 9223372036854775807 |       850000 |         0 |          65536 | 2014-11-04 21:07:25 | 2014-11-04 21:07:25 | NULL       | latin1_swedish_ci |     NULL |                |         |
+| pageviews | TokuDB |      10 | tokudb_zlib | 10327496 |             28 |   289177660 | 9223372036854775807 |            0 |         0 |       10354531 | 2014-11-04 21:09:09 | 2014-11-04 21:09:09 | NULL       | latin1_swedish_ci |     NULL |                |         |
+| users     | TokuDB |      10 | tokudb_zlib |  1000000 |             43 |    43817904 | 9223372036854775807 |            0 |         0 |        1048561 | 2014-11-04 21:09:28 | 2014-11-04 21:09:28 | NULL       | latin1_swedish_ci |     NULL |                |         |
++-----------+--------+---------+-------------+----------+----------------+-------------+---------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
+5 rows in set (0.00 sec)
+
+
+
+22222
+
+
+
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/innodb.sql 
+
+real    1m40.719s
+user    0m0.004s
+sys 0m0.000s
+
+cold 10 rows in set (16.69 sec)
+warm 10 rows in set (15.48 sec)
+
+
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/myisam.sql 
+
+real    0m47.061s
+user    0m0.000s
+sys 0m0.004s
+
+cold 10 rows in set (2.56 sec)
+warm 10 rows in set (2.53 sec)
+
+mysql> explain SELECT  `keywords`.`word` AS keyword, count(*) AS clicks  FROM `adclicks`     INNER JOIN `keywords`         ON `adclicks`.`banner_id` = `keywords`.`banner_id`      LEFT JOIN `users`         ON `users`.`id` = `adclicks`.`user_id`      LEFT JOIN `pageviews`         ON `pageviews`.`id` = `adclicks`.`pageview_id`  WHERE     `users`.`gender` = 'F'      AND `users`.`age` BETWEEN 23 AND 28      AND `pageviews`.`platform` = 'android'     AND `adclicks`.`created_at` BETWEEN '2014-08-20 00:00:00' AND '2014-08-31 00:00:00' GROUP BY `keywords`.`word` ORDER BY `clicks` DESC LIMIT 10;
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+| id | select_type | table     | type   | possible_keys | key        | key_len | ref                                   | rows   | Extra                                                             |
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+|  1 | SIMPLE      | adclicks  | range  | timestamps    | timestamps | 6       | NULL                                  | 160801 | Using index condition; Using MRR; Using temporary; Using filesort |
+|  1 | SIMPLE      | users     | eq_ref | PRIMARY       | PRIMARY    | 8       | dbcompare_myisam.adclicks.user_id     |      1 | Using where                                                       |
+|  1 | SIMPLE      | pageviews | eq_ref | PRIMARY       | PRIMARY    | 8       | dbcompare_myisam.adclicks.pageview_id |      1 | Using where                                                       |
+|  1 | SIMPLE      | keywords  | ref    | banner_id     | banner_id  | 8       | dbcompare_myisam.adclicks.banner_id   |     50 | NULL                                                              |
++----+-------------+-----------+--------+---------------+------------+---------+---------------------------------------+--------+-------------------------------------------------------------------+
+4 rows in set (0.00 sec)
+
+
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/innodb.sql 
+
+real    1m40.295s
+user    0m0.000s
+sys 0m0.004s
+
+warm 10 rows in set (16.29 sec)
+
+
+vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/tokudb.sql 
+
+real    1m36.089s
+user    0m0.008s
+sys 0m0.000s
+
+cold 10 rows in set (7.74 sec)
+warm 10 rows in set (4.45 sec)
