@@ -1,0 +1,27 @@
+disk space MB
+--------------------------
+myisam 849.1053085327
+innodb 994.375
+xtradb 969.34375
+tokudb 572.3188095093
+
+import time
+--------------------------
+myisam 0m47.061s
+innodb 1m40.719s
+xtradb 1m40.295s
+tokudb 1m36.089s
+
+cold query time
+--------------------------
+myisam 2.56 sec
+innodb 16.69 sec
+xtradb asd
+tokudb 7.74 sec
+
+warm query time
+--------------------------
+myisam 2.53 sec
+innodb 15.48 sec
+xtradb 16.29 sec
+tokudb 4.45 sec

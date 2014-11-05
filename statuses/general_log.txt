@@ -1,4 +1,3 @@
-mysql innodb - 
 vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/innodb.sql 
 
 real    2m54.509s
@@ -76,18 +75,6 @@ cold cpu2: 10 rows in set (50.04 sec)
 cold: 10 rows in set (17.00 sec)
 warm: 10 rows in set (17.56 sec)
 
-mysql> show table status ;
-+-----------+--------+---------+------------+---------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
-| Name      | Engine | Version | Row_format | Rows    | Avg_row_length | Data_length | Max_data_length | Index_length | Data_free | Auto_increment | Create_time         | Update_time | Check_time | Collation         | Checksum | Create_options | Comment |
-+-----------+--------+---------+------------+---------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
-| adclicks  | InnoDB |      10 | Compact    | 4587498 |             61 |   280838144 |               0 |    153894912 |   5242880 |        5000001 | 2014-11-02 15:05:11 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
-| banners   | InnoDB |      10 | Compact    |    1000 |            114 |      114688 |               0 |            0 |         0 |           1001 | 2014-11-02 15:05:11 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
-| keywords  | InnoDB |      10 | Compact    |   50248 |             52 |     2637824 |               0 |      2637824 |   4194304 |          50001 | 2014-11-02 15:05:11 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
-| pageviews | InnoDB |      10 | Compact    | 9821112 |             51 |   508559360 |               0 |            0 |   4194304 |       10327497 | 2014-11-02 15:06:42 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
-| users     | InnoDB |      10 | Compact    |  996786 |             67 |    67747840 |               0 |            0 |   4194304 |        1000001 | 2014-11-02 15:08:02 | NULL        | NULL       | latin1_swedish_ci |     NULL |                |         |
-+-----------+--------+---------+------------+---------+----------------+-------------+-----------------+--------------+-----------+----------------+---------------------+-------------+------------+-------------------+----------+----------------+---------+
-5 rows in set (0.00 sec)
-
 
 
 vagrant@packer-debian-7:~$ time mysql -uroot < /vagrant/sql_import/tokudb.sql 
@@ -99,17 +86,6 @@ sys 0m0.004s
 cold: 10 rows in set (13.63 sec)
 warm: 10 rows in set (9.34 sec)
 
-mysql> show table status;
-+-----------+--------+---------+-------------+----------+----------------+-------------+---------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
-| Name      | Engine | Version | Row_format  | Rows     | Avg_row_length | Data_length | Max_data_length     | Index_length | Data_free | Auto_increment | Create_time         | Update_time         | Check_time | Collation         | Checksum | Create_options | Comment |
-+-----------+--------+---------+-------------+----------+----------------+-------------+---------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
-| adclicks  | TokuDB |      10 | tokudb_zlib |  5000000 |             38 |   190000000 | 9223372036854775807 |     75000000 |         0 |        5046196 | 2014-11-04 21:07:54 | 2014-11-04 21:07:54 | NULL       | latin1_swedish_ci |     NULL |                |         |
-| banners   | TokuDB |      10 | tokudb_zlib |     1000 |             51 |       51103 | 9223372036854775807 |            0 |         0 |           1024 | 2014-11-04 21:07:25 | 2014-11-04 21:07:25 | NULL       | latin1_swedish_ci |     NULL |                |         |
-| keywords  | TokuDB |      10 | tokudb_zlib |    50000 |             24 |     1223101 | 9223372036854775807 |       850000 |         0 |          65536 | 2014-11-04 21:07:25 | 2014-11-04 21:07:25 | NULL       | latin1_swedish_ci |     NULL |                |         |
-| pageviews | TokuDB |      10 | tokudb_zlib | 10327496 |             28 |   289177660 | 9223372036854775807 |            0 |         0 |       10354531 | 2014-11-04 21:09:09 | 2014-11-04 21:09:09 | NULL       | latin1_swedish_ci |     NULL |                |         |
-| users     | TokuDB |      10 | tokudb_zlib |  1000000 |             43 |    43817904 | 9223372036854775807 |            0 |         0 |        1048561 | 2014-11-04 21:09:28 | 2014-11-04 21:09:28 | NULL       | latin1_swedish_ci |     NULL |                |         |
-+-----------+--------+---------+-------------+----------+----------------+-------------+---------------------+--------------+-----------+----------------+---------------------+---------------------+------------+-------------------+----------+----------------+---------+
-5 rows in set (0.00 sec)
 
 
 
@@ -165,3 +141,16 @@ sys 0m0.000s
 
 cold 10 rows in set (7.74 sec)
 warm 10 rows in set (4.45 sec)
+
+
+
+
+
+select substring(var FROM 1 FOR 40) as var, myisam_cold , myisam_warm ,innodb_cold,innodb_warm,xtradb_cold,xtradb_warm,tokudb_cold,tokudb_warm from vc;
+
+
+
+
+
+mysql> select var , myisam_cold , myisam_warm, myisam_cold - myisam_warm as diff, ROUND((myisam_cold - myisam_warm) / myisam_cold * 100) as perc from vc where myisam_warm != myisam_cold;
+
